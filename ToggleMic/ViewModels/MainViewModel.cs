@@ -1,4 +1,5 @@
-﻿using AudioSwitcher.AudioApi.CoreAudio;
+﻿using AudioSwitcher.AudioApi;
+using AudioSwitcher.AudioApi.CoreAudio;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +14,6 @@ namespace ToggleMic.ViewModels
 
         public MainViewModel()
         {
-            Active = !MicDevice.IsMuted;
-
             MuteCommand = new RelayCommand(o =>
             {
                 Mute(Active);
@@ -23,6 +22,8 @@ namespace ToggleMic.ViewModels
             keyboardHook.KeyPressed += KeyboardHook_KeyCombinationPressed;
 
             Mute(!Keyboard.IsKeyToggled(Key.Scroll));
+
+            Active = !MicDevice.IsMuted;
         }
 
         private void KeyboardHook_KeyCombinationPressed(object sender, KeyPressedEventArgs e)
@@ -56,9 +57,9 @@ namespace ToggleMic.ViewModels
         {
             get
             {
-                return Controller.GetCaptureDevices(AudioSwitcher.AudioApi.DeviceState.Active)
+                return Controller.GetCaptureDevices(DeviceState.Active)
                     .FirstOrDefault(o => o.IsDefaultDevice);
             }
-        }
+}
     }
 }
