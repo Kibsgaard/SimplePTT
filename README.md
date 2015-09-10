@@ -1,4 +1,4 @@
-ToggleMic
+SimplePTT
 =========
 
-A simple WPF application that allows you to mute/unmute your microphone.
+A Windows utility that enables global push-to-talk by muting and unmuting your microphone.
