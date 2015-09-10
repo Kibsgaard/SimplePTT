@@ -10,35 +10,55 @@ namespace ToggleMic
 {
   public class MicController
   {
-    private KeyboardHook keyboardHook = new KeyboardHook();
+    public bool IsMuted { get; private set; }
+
+    private CoreAudioController controller;
+    private KeyboardHook keyboardHook;
 
     public MicController()
     {
-      this.keyboardHook.KeyPressed += this.KeyboardHook_KeyPressed;
-      this.Mute(Keyboard.IsKeyToggled(Key.Scroll) == false);
-      this.IsActive = (this.GetActiveDevice().IsMuted == false);
+      this.controller = new CoreAudioController();
+      this.keyboardHook = new KeyboardHook();
+
+      this.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
+      this.keyboardHook.KeyReleased += KeyboardHook_KeyReleased;
+      this.Mute(true);
+    }
+
+    public void Cleanup()
+    {
+      this.Mute(false);
     }
 
     private void KeyboardHook_KeyPressed(
-      object sender, 
-      KeyPressedEventArgs e)
+      object sender,
+      KeyEventArgs e)
     {
-      switch (e.KeyPressed)
+      switch (e.Key)
       {
         case Key.Scroll:
-          this.Mute(Keyboard.IsKeyToggled(Key.Scroll));
+          this.Mute(false);
+          break;
+      }
+    }
+
+    private void KeyboardHook_KeyReleased(
+      object sender,
+      KeyEventArgs e)
+    {
+      switch (e.Key)
+      {
+        case Key.Scroll:
+          this.Mute(true);
           break;
       }
     }
 
     private void Mute(bool mute)
     {
-      CoreAudioDevice micDevice = this.GetActiveDevice();
-      micDevice.Mute(mute);
-      this.IsActive = (micDevice.IsMuted == false);
+      this.GetActiveDevice().Mute(mute);
+      this.IsMuted = mute;
     }
-
-    public bool IsActive { get; set; }
 
     private CoreAudioDevice GetActiveDevice()
     {
@@ -46,7 +66,5 @@ namespace ToggleMic
         this.controller.GetCaptureDevices(DeviceState.Active)
           .FirstOrDefault(o => o.IsDefaultDevice);
     }
-
-    private CoreAudioController controller = new CoreAudioController();
   }
 }
