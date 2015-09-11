@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
+using System.Timers;
 
 using AudioSwitcher.AudioApi;
 using AudioSwitcher.AudioApi.CoreAudio;
@@ -10,15 +11,25 @@ namespace SimplePTT
 {
   public class MicController : IDisposable
   {
+    public const int MUTE_DELAY = 300;
+
     public bool IsMuted { get; private set; }
 
     private CoreAudioController controller;
     private KeyboardHook keyboardHook;
     private MouseHook mouseHook;
 
+    private Timer timer;
+    private Object muteLock;
+
     public MicController()
     {
       this.controller = new CoreAudioController();
+
+      this.muteLock = new Object();
+      this.timer = new Timer(MUTE_DELAY);
+      this.timer.AutoReset = false;
+      this.timer.Elapsed += this.Timer_Elapsed;
 
       this.keyboardHook = new KeyboardHook();
       this.keyboardHook.KeyDown += KeyboardHook_KeyDown;
@@ -28,6 +39,11 @@ namespace SimplePTT
       this.mouseHook.ButtonDown += MouseHook_ButtonDown;
       this.mouseHook.ButtonUp += MouseHook_ButtonUp;
 
+      this.Mute(true);
+    }
+
+    void Timer_Elapsed(object sender, ElapsedEventArgs e)
+    {
       this.Mute(true);
     }
 
@@ -42,9 +58,6 @@ namespace SimplePTT
     {
       switch (keyEvt.Key)
       {
-        case Key.Scroll:
-          this.Mute(false);
-          break;
       }
     }
 
@@ -52,9 +65,6 @@ namespace SimplePTT
     {
       switch (keyEvt.Key)
       {
-        case Key.Scroll:
-          this.Mute(true);
-          break;
       }
     }
 
@@ -63,7 +73,7 @@ namespace SimplePTT
       switch (mouseEvt.Button)
       {
         case 4:
-          this.Mute(false);
+          this.Unmute();
           break;
       }
     }
@@ -73,15 +83,29 @@ namespace SimplePTT
       switch (mouseEvt.Button)
       {
         case 4:
-          this.Mute(true);
+          this.DeferMute();
           break;
       }
     }
 
+    private void DeferMute()
+    {
+      this.timer.Stop();
+      this.timer.Start();
+    }
+
+    private void Unmute()
+    {
+      this.Mute(false);
+    }
+
     private void Mute(bool mute)
     {
-      this.GetActiveDevice().Mute(mute);
-      this.IsMuted = mute;
+      lock (this.muteLock)
+      {
+        this.GetActiveDevice().Mute(mute);
+        this.IsMuted = mute;
+      }
     }
 
     private CoreAudioDevice GetActiveDevice()
