@@ -19,7 +19,12 @@ static class Program
     Application.EnableVisualStyles();
     Application.SetCompatibleTextRenderingDefault(false);
     Application.ApplicationExit += Application_ApplicationExit;
-    Application.Run(new Interface());
+			
+    using (TrayIcon tray = new TrayIcon())
+    {
+      tray.Display();
+      Application.Run();
+    }
   }
 
   static void Application_ApplicationExit(object sender, EventArgs e)
