@@ -1,4 +1,4 @@
-﻿namespace ToggleMic
+﻿namespace SimplePTT
 {
   partial class Interface
   {

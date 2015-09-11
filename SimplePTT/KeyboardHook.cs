@@ -6,8 +6,19 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Diagnostics;
 
-namespace ToggleMic
+namespace SimplePTT
 {
+  public class KeyEventArgs : EventArgs
+  {
+    public Key Key { get { return this.key; } }
+    private readonly Key key;
+
+    public KeyEventArgs(Key key)
+    {
+      this.key = key;
+    }
+  }
+
   public class KeyboardHook : IDisposable
   {
     private const int WH_KEYBOARD_LL = 13;
@@ -19,11 +30,11 @@ namespace ToggleMic
       IntPtr wParam,
       IntPtr lParam);
 
-    public event EventHandler<KeyEventArgs> KeyPressed;
-    public event EventHandler<KeyEventArgs> KeyReleased;
+    public event EventHandler<KeyEventArgs> KeyDown;
+    public event EventHandler<KeyEventArgs> KeyUp;
 
     private LowLevelKeyboardProc keyboardProc;
-    private IntPtr hookId = IntPtr.Zero;
+    private IntPtr hookId;
 
     public KeyboardHook()
     {
@@ -36,16 +47,16 @@ namespace ToggleMic
       KeyboardHook.UnhookWindowsHookEx(this.hookId);
     }
 
-    private void OnKeyPressed(KeyEventArgs e)
+    private void OnKeyDown(Key key)
     {
-      if (this.KeyPressed != null)
-        this.KeyPressed.Invoke(null, e);
+      if (this.KeyDown != null)
+        this.KeyDown.Invoke(null, new KeyEventArgs(key));
     }
 
-    private void OnKeyReleased(KeyEventArgs e)
+    private void OnKeyUp(Key key)
     {
-      if (this.KeyReleased != null)
-        this.KeyReleased.Invoke(null, e);
+      if (this.KeyUp != null)
+        this.KeyUp.Invoke(null, new KeyEventArgs(key));
     }
 
     private IntPtr SetHook(LowLevelKeyboardProc proc)
@@ -54,7 +65,11 @@ namespace ToggleMic
       {
         using (ProcessModule curModule = curProcess.MainModule)
         {
-          return SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
+          return SetWindowsHookEx(
+            WH_KEYBOARD_LL, 
+            proc, 
+            GetModuleHandle(curModule.ModuleName), 
+            0);
         }
       }
     }
@@ -66,34 +81,36 @@ namespace ToggleMic
         bool keyDown = (wParam == (IntPtr)WM_KEYDOWN);
         bool keyUp = (wParam == (IntPtr)WM_KEYUP);
 
-        if (keyDown || keyUp)
+        if (wParam == (IntPtr)WM_KEYDOWN)
         {
-          int vkCode = Marshal.ReadInt32(lParam);
-          Key key = KeyInterop.KeyFromVirtualKey(vkCode);
-
-          if (keyDown)
-          {
-            OnKeyPressed(new KeyEventArgs(key, vkCode));
-          }
-          else
-          {
-            OnKeyReleased(new KeyEventArgs(key, vkCode));
-          }
+          OnKeyDown(KeyInterop.KeyFromVirtualKey(Marshal.ReadInt32(lParam)));
+        }
+        else if (wParam == (IntPtr)WM_KEYUP)
+        {
+          OnKeyUp(KeyInterop.KeyFromVirtualKey(Marshal.ReadInt32(lParam)));
         }
       }
 
-      return CallNextHookEx(hookId, nCode, wParam, lParam);
+      return CallNextHookEx(this.hookId, nCode, wParam, lParam);
     }
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+    private static extern IntPtr SetWindowsHookEx(
+      int idHook, 
+      LowLevelKeyboardProc lpfn, 
+      IntPtr hMod, 
+      uint dwThreadId);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool UnhookWindowsHookEx(IntPtr hhk);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+    private static extern IntPtr CallNextHookEx(
+      IntPtr hhk, 
+      int nCode, 
+      IntPtr wParam, 
+      IntPtr lParam);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr GetModuleHandle(string lpModuleName);

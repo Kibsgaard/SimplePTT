@@ -6,7 +6,7 @@ using System.Windows.Input;
 using AudioSwitcher.AudioApi;
 using AudioSwitcher.AudioApi.CoreAudio;
 
-namespace ToggleMic
+namespace SimplePTT
 {
   public class MicController : IDisposable
   {
@@ -14,27 +14,33 @@ namespace ToggleMic
 
     private CoreAudioController controller;
     private KeyboardHook keyboardHook;
+    private MouseHook mouseHook;
 
     public MicController()
     {
       this.controller = new CoreAudioController();
-      this.keyboardHook = new KeyboardHook();
 
-      this.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
-      this.keyboardHook.KeyReleased += KeyboardHook_KeyReleased;
+      this.keyboardHook = new KeyboardHook();
+      this.keyboardHook.KeyDown += KeyboardHook_KeyDown;
+      this.keyboardHook.KeyUp += KeyboardHook_KeyUp;
+
+      this.mouseHook = new MouseHook();
+      this.mouseHook.ButtonDown += MouseHook_ButtonDown;
+      this.mouseHook.ButtonUp += MouseHook_ButtonUp;
+
       this.Mute(true);
     }
 
     public void Dispose()
     {
       this.Mute(false);
+      this.keyboardHook.Dispose();
+      this.mouseHook.Dispose();
     }
 
-    private void KeyboardHook_KeyPressed(
-      object sender,
-      KeyEventArgs e)
+    private void KeyboardHook_KeyDown(object sender, KeyEventArgs keyEvt)
     {
-      switch (e.Key)
+      switch (keyEvt.Key)
       {
         case Key.Scroll:
           this.Mute(false);
@@ -42,13 +48,31 @@ namespace ToggleMic
       }
     }
 
-    private void KeyboardHook_KeyReleased(
-      object sender,
-      KeyEventArgs e)
+    private void KeyboardHook_KeyUp(object sender, KeyEventArgs keyEvt)
     {
-      switch (e.Key)
+      switch (keyEvt.Key)
       {
         case Key.Scroll:
+          this.Mute(true);
+          break;
+      }
+    }
+
+    void MouseHook_ButtonDown(object sender, MouseEventArgs mouseEvt)
+    {
+      switch (mouseEvt.Button)
+      {
+        case 4:
+          this.Mute(false);
+          break;
+      }
+    }
+
+    void MouseHook_ButtonUp(object sender, MouseEventArgs mouseEvt)
+    {
+      switch (mouseEvt.Button)
+      {
+        case 4:
           this.Mute(true);
           break;
       }

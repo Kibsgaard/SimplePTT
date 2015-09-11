@@ -67,7 +67,7 @@
       <DependentUpon>Interface.cs</DependentUpon>
     </Compile>
     <Compile Include="KeyboardHook.cs" />
-    <Compile Include="KeyEventArgs.cs" />
+    <Compile Include="MouseHook.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="MicController.cs" />
   </ItemGroup>

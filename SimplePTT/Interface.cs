@@ -8,21 +8,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace ToggleMic
+namespace SimplePTT
 {
   public partial class Interface : Form
   {
-    private MicController controller;
-
     public Interface()
     {
       InitializeComponent();
-      this.controller = new MicController();
-    }
-
-    private void label1_Click(object sender, EventArgs e)
-    {
-
     }
   }
 }
