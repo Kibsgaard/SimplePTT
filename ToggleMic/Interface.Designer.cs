@@ -28,35 +28,23 @@
     /// </summary>
     private void InitializeComponent()
     {
-      this.Status = new System.Windows.Forms.Label();
+      System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Interface));
       this.SuspendLayout();
-      // 
-      // Status
-      // 
-      this.Status.AutoSize = true;
-      this.Status.Location = new System.Drawing.Point(12, 9);
-      this.Status.Name = "Status";
-      this.Status.Size = new System.Drawing.Size(37, 13);
-      this.Status.TabIndex = 0;
-      this.Status.Text = "Status";
-      this.Status.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-      this.Status.Click += new System.EventHandler(this.label1_Click);
       // 
       // Interface
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(202, 33);
-      this.Controls.Add(this.Status);
+      this.BackColor = System.Drawing.SystemColors.Control;
+      this.ClientSize = new System.Drawing.Size(214, 192);
+      this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.Name = "Interface";
-      this.Text = "CrappyPTT 1.0";
+      this.Text = "SimplePTT 1.0";
       this.ResumeLayout(false);
-      this.PerformLayout();
 
     }
 
     #endregion
 
-    private System.Windows.Forms.Label Status;
   }
 }

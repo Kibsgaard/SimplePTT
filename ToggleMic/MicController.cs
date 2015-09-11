@@ -8,7 +8,7 @@ using AudioSwitcher.AudioApi.CoreAudio;
 
 namespace ToggleMic
 {
-  public class MicController
+  public class MicController : IDisposable
   {
     public bool IsMuted { get; private set; }
 
@@ -25,7 +25,7 @@ namespace ToggleMic
       this.Mute(true);
     }
 
-    public void Cleanup()
+    public void Dispose()
     {
       this.Mute(false);
     }
