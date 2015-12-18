@@ -17,7 +17,7 @@ namespace SimplePTT
 
       // Name
       item = new ToolStripMenuItem();
-      item.Text = "SimplePTT 1.0";
+      item.Text = "SimplePTT 1.1";
       item.Enabled = false;
       menu.Items.Add(item);
 
