@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Input;
 using System.Timers;
-
+using System.Windows.Input;
 using AudioSwitcher.AudioApi;
 using AudioSwitcher.AudioApi.CoreAudio;
 
@@ -72,6 +70,7 @@ namespace SimplePTT
             switch (keyEvt.Key)
             {
                 case Key.F13:
+                case Key.CapsLock:
                     return true;
             }
 
@@ -83,7 +82,9 @@ namespace SimplePTT
             switch (keyEvt.Key)
             {
                 case Key.Pause:
-                    return true;
+                case Key.Oem3:
+                case Key.Oem5:
+                    return true;                
             }
 
             return false;
