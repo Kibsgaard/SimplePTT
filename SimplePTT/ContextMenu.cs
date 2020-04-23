@@ -3,35 +3,57 @@ using System.Windows.Forms;
 
 namespace SimplePTT
 {
-  class ContextMenu
+  internal class ContextMenu
   {
+    private readonly MicController micController;
+
+    public ContextMenu(MicController micController)
+    {
+      this.micController = micController;
+    }
+
     public ContextMenuStrip Create()
     {
-      // Add the default menu options.
-      ContextMenuStrip menu = new ContextMenuStrip();
-      ToolStripMenuItem item;
-      ToolStripSeparator sep;
+      var title = new ToolStripMenuItem(Resources.ProgramTitle);
+      title.Enabled = false;
 
-      // Name
-      item = new ToolStripMenuItem();
-      item.Text = Resources.ProgramTitle;
-      item.Enabled = false;
-      menu.Items.Add(item);
+      var exit = new ToolStripMenuItem("Exit");      
+      exit.Click += new EventHandler(ExitClick);
 
-      // Separator
-      sep = new ToolStripSeparator();
-      menu.Items.Add(sep);
+      var targetMicrophoneMenu = new ToolStripMenuItem("Target Microphone");
+      targetMicrophoneMenu.DropDownOpening += (s, e) => TargetMicrophoneDropDownOpening(targetMicrophoneMenu);
+      targetMicrophoneMenu.DropDownItems.Add(new ToolStripMenuItem("Failed to load device list"));
 
-      // Exit
-      item = new ToolStripMenuItem();
-      item.Text = "Exit";
-      item.Click += new System.EventHandler(Exit_Click);
-      menu.Items.Add(item);
+      var menu = new ContextMenuStrip();
+      menu.Items.Add(title);
+      menu.Items.Add(new ToolStripSeparator());           
+      menu.Items.Add(targetMicrophoneMenu);
+      menu.Items.Add(new ToolStripSeparator());
+      menu.Items.Add(exit);
 
       return menu;
     }
 
-    void Exit_Click(object sender, EventArgs e)
+    private void TargetMicrophoneDropDownOpening(ToolStripMenuItem targetMicrophoneMenu)
+    {
+      targetMicrophoneMenu.DropDownItems.Clear();
+      var activeDeviceId = micController.GetSelectedDeviceId();
+
+      foreach (var device in micController.GetAudioDevices())
+      {
+        var deviceItem = new ToolStripMenuItem(device.FullName);
+        deviceItem.Click += (s, e) => SelectDevice(device.Id);
+        deviceItem.Checked = device.Id == activeDeviceId;
+        targetMicrophoneMenu.DropDownItems.Add(deviceItem);
+      }
+    }
+
+    private void SelectDevice(Guid id)
+    {
+      micController.SetAudioDevice(id);
+    }
+
+    private void ExitClick(object sender, EventArgs e)
     {
       Application.Exit();
     }

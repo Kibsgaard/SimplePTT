@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 using System.Windows.Input;
@@ -12,16 +13,17 @@ namespace SimplePTT
     public const int MUTE_DELAY = 300;
 
     public bool IsMuted { get; private set; }
+    public event Action<bool> MuteToggled;
 
-    private TrayIcon trayIcon;
-    private CoreAudioController controller;
-    private KeyboardHook keyboardHook;
-    private MouseHook mouseHook;
+    private readonly CoreAudioController controller;
+    private readonly KeyboardHook keyboardHook;
+    private readonly MouseHook mouseHook;
 
-    private Timer timer;
-    private Object muteLock;
+    private readonly Timer timer;
+    private readonly Object muteLock;
+    private Guid? selectedDeviceGuid;
 
-    public MicController(TrayIcon tray)
+    public MicController()
     {
       controller = new CoreAudioController();
 
@@ -38,11 +40,10 @@ namespace SimplePTT
       mouseHook.ButtonDown += MouseHook_ButtonDown;
       mouseHook.ButtonUp += MouseHook_ButtonUp;
 
-      trayIcon = tray;
       Mute(true);
     }
 
-    void Timer_Elapsed(object sender, ElapsedEventArgs e)
+    private void Timer_Elapsed(object sender, ElapsedEventArgs e)
     {
       Mute(true);
     }
@@ -52,6 +53,21 @@ namespace SimplePTT
       Mute(false);
       keyboardHook.Dispose();
       mouseHook.Dispose();
+    }
+
+    public Guid? GetSelectedDeviceId()
+    {
+      return selectedDeviceGuid;
+    }
+
+    public IEnumerable<CoreAudioDevice> GetAudioDevices()
+    {
+      return controller.GetCaptureDevices(DeviceState.Active);
+    }
+
+    public void SetAudioDevice(Guid guid)
+    {
+      selectedDeviceGuid = guid;
     }
 
     private bool IsValidButton(int button)
@@ -109,13 +125,13 @@ namespace SimplePTT
         DeferMute();
     }
 
-    void MouseHook_ButtonDown(object sender, MouseEventArgs mouseEvt)
+    private void MouseHook_ButtonDown(object sender, MouseEventArgs mouseEvt)
     {
       if (IsValidButton(mouseEvt.Button))
         Unmute();
     }
 
-    void MouseHook_ButtonUp(object sender, MouseEventArgs mouseEvt)
+    private void MouseHook_ButtonUp(object sender, MouseEventArgs mouseEvt)
     {
       if (IsValidButton(mouseEvt.Button))
         DeferMute();
@@ -139,15 +155,16 @@ namespace SimplePTT
       {
         GetActiveDevice().Mute(mute);
         IsMuted = mute;
-        trayIcon.SetMutedIcon(mute);
+        MuteToggled?.Invoke(mute);
       }
     }
 
     private CoreAudioDevice GetActiveDevice()
     {
-      return
-        controller.GetCaptureDevices(DeviceState.Active)
-          .FirstOrDefault(o => o.IsDefaultDevice);
+      if (!selectedDeviceGuid.HasValue)
+        selectedDeviceGuid = controller.GetCaptureDevices(DeviceState.Active).FirstOrDefault(o => o.IsDefaultDevice).Id;
+
+      return controller.GetDevice(selectedDeviceGuid.Value);
     }
   }
 }

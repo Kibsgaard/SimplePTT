@@ -62,8 +62,8 @@ namespace SimplePTT
     public event EventHandler<MouseEventArgs> ButtonDown;
     public event EventHandler<MouseEventArgs> ButtonUp;
 
-    private LowLevelMouseProc mouseProc;
-    private IntPtr hookId;
+    private readonly LowLevelMouseProc mouseProc;
+    private readonly IntPtr hookId;
 
     public MouseHook()
     {

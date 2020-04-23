@@ -6,20 +6,24 @@ namespace SimplePTT
 {
   public class TrayIcon : IDisposable
   {
-    NotifyIcon icon;
-    Icon mutedIcon;
-    Icon openMicIcon;
+    private readonly NotifyIcon icon;
+    private readonly Icon mutedIcon;
+    private readonly Icon openMicIcon;
+    private readonly MicController micController;
 
-    public TrayIcon()
+    public TrayIcon(MicController micController)
     {
       icon = new NotifyIcon();
       mutedIcon = Resources.GreyMicrophone;
       openMicIcon = Resources.GreenMicrophone;
 
+      SetMutedIcon(micController.IsMuted);
+      micController.MuteToggled += SetMutedIcon;
+
       icon.Text = Resources.ProgramTitle;
       icon.Visible = true;
-      icon.ContextMenuStrip = new ContextMenu().Create();
-
+      icon.ContextMenuStrip = new ContextMenu(micController).Create();
+      this.micController = micController;
     }
 
     public void SetMutedIcon(bool muted)
@@ -29,6 +33,7 @@ namespace SimplePTT
 
     public void Dispose()
     {
+      micController.MuteToggled -= SetMutedIcon;
       icon.Dispose();
     }
   }

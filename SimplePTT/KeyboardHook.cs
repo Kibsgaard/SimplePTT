@@ -30,8 +30,8 @@ namespace SimplePTT
     public event EventHandler<KeyEventArgs> KeyDown;
     public event EventHandler<KeyEventArgs> KeyUp;
 
-    private LowLevelKeyboardProc keyboardProc;
-    private IntPtr hookId;
+    private readonly LowLevelKeyboardProc keyboardProc;
+    private readonly IntPtr hookId;
 
     public KeyboardHook()
     {
