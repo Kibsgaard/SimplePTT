@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Linq;
-using System.Windows.Interop;
 using System.Windows.Input;
 using System.Runtime.InteropServices;
-using System.Windows;
 using System.Diagnostics;
 
 namespace SimplePTT
@@ -66,9 +63,9 @@ namespace SimplePTT
         using (ProcessModule curModule = curProcess.MainModule)
         {
           return SetWindowsHookEx(
-            WH_KEYBOARD_LL, 
-            proc, 
-            GetModuleHandle(curModule.ModuleName), 
+            WH_KEYBOARD_LL,
+            proc,
+            GetModuleHandle(curModule.ModuleName),
             0);
         }
       }
@@ -96,9 +93,9 @@ namespace SimplePTT
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr SetWindowsHookEx(
-      int idHook, 
-      LowLevelKeyboardProc lpfn, 
-      IntPtr hMod, 
+      int idHook,
+      LowLevelKeyboardProc lpfn,
+      IntPtr hMod,
       uint dwThreadId);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -107,9 +104,9 @@ namespace SimplePTT
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr CallNextHookEx(
-      IntPtr hhk, 
-      int nCode, 
-      IntPtr wParam, 
+      IntPtr hhk,
+      int nCode,
+      IntPtr wParam,
       IntPtr lParam);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]

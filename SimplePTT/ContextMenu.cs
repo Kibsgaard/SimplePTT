@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Windows.Forms;
-using System.Drawing;
-using SimplePTT.Properties;
 
 namespace SimplePTT
 {

@@ -1,35 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using SimplePTT;
 
 static class Program
 {
-    public static MicController MicController;
+  public static MicController MicController;
 
-    [STAThread]
-    static void Main()
+  [STAThread]
+  static void Main()
+  {
+    Application.EnableVisualStyles();
+    Application.SetCompatibleTextRenderingDefault(false);
+    Application.ApplicationExit += Application_ApplicationExit;
+
+    using (TrayIcon tray = new TrayIcon())
     {
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-        Application.ApplicationExit += Application_ApplicationExit;
-
-        using (TrayIcon tray = new TrayIcon())
-        {
-            MicController = new MicController(tray);
-            Application.Run();
-        }
+      MicController = new MicController(tray);
+      Application.Run();
     }
+  }
 
-    static void Application_ApplicationExit(object sender, EventArgs e)
+  static void Application_ApplicationExit(object sender, EventArgs e)
+  {
+    if (Program.MicController != null)
     {
-        if (Program.MicController != null)
-        {
-            Program.MicController.Dispose();
-        }
+      Program.MicController.Dispose();
     }
+  }
 }
