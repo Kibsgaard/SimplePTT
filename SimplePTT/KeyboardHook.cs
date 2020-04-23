@@ -10,7 +10,7 @@ namespace SimplePTT
 {
   public class KeyEventArgs : EventArgs
   {
-    public Key Key { get { return this.key; } }
+    public Key Key { get { return key; } }
     private readonly Key key;
 
     public KeyEventArgs(Key key)
@@ -38,25 +38,25 @@ namespace SimplePTT
 
     public KeyboardHook()
     {
-      this.keyboardProc = this.HookCallback;
-      this.hookId = this.SetHook(this.keyboardProc);
+      keyboardProc = HookCallback;
+      hookId = SetHook(keyboardProc);
     }
 
     public void Dispose()
     {
-      KeyboardHook.UnhookWindowsHookEx(this.hookId);
+      KeyboardHook.UnhookWindowsHookEx(hookId);
     }
 
     private void OnKeyDown(Key key)
     {
-      if (this.KeyDown != null)
-        this.KeyDown.Invoke(null, new KeyEventArgs(key));
+      if (KeyDown != null)
+        KeyDown.Invoke(null, new KeyEventArgs(key));
     }
 
     private void OnKeyUp(Key key)
     {
-      if (this.KeyUp != null)
-        this.KeyUp.Invoke(null, new KeyEventArgs(key));
+      if (KeyUp != null)
+        KeyUp.Invoke(null, new KeyEventArgs(key));
     }
 
     private IntPtr SetHook(LowLevelKeyboardProc proc)
@@ -91,7 +91,7 @@ namespace SimplePTT
         }
       }
 
-      return CallNextHookEx(this.hookId, nCode, wParam, lParam);
+      return CallNextHookEx(hookId, nCode, wParam, lParam);
     }
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]

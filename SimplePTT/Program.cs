@@ -9,29 +9,27 @@ using SimplePTT;
 
 static class Program
 {
-  public static MicController MicController;
+    public static MicController MicController;
 
-  [STAThread]
-  static void Main()
-  {
-    Program.MicController = new MicController();
-
-    Application.EnableVisualStyles();
-    Application.SetCompatibleTextRenderingDefault(false);
-    Application.ApplicationExit += Application_ApplicationExit;
-			
-    using (TrayIcon tray = new TrayIcon())
+    [STAThread]
+    static void Main()
     {
-      tray.Display();
-      Application.Run();
-    }
-  }
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
+        Application.ApplicationExit += Application_ApplicationExit;
 
-  static void Application_ApplicationExit(object sender, EventArgs e)
-  {
-    if (Program.MicController != null)
-    {
-      Program.MicController.Dispose();
+        using (TrayIcon tray = new TrayIcon())
+        {
+            MicController = new MicController(tray);
+            Application.Run();
+        }
     }
-  }
+
+    static void Application_ApplicationExit(object sender, EventArgs e)
+    {
+        if (Program.MicController != null)
+        {
+            Program.MicController.Dispose();
+        }
+    }
 }

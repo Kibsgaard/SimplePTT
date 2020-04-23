@@ -10,7 +10,7 @@ namespace SimplePTT
 {
   public class MouseEventArgs : EventArgs
   {
-    public int Button { get { return this.button; } }
+    public int Button { get { return button; } }
     private readonly int button;
 
     public MouseEventArgs(int button)
@@ -71,25 +71,25 @@ namespace SimplePTT
 
     public MouseHook()
     {
-      this.mouseProc = this.HookCallback;
-      this.hookId = this.SetHook(this.mouseProc);
+      mouseProc = HookCallback;
+      hookId = SetHook(mouseProc);
     }
 
     public void Dispose()
     {
-      MouseHook.UnhookWindowsHookEx(this.hookId);
+      MouseHook.UnhookWindowsHookEx(hookId);
     }
 
     private void OnButtonDown(int button)
     {
-      if (this.ButtonDown != null)
-        this.ButtonDown.Invoke(null, new MouseEventArgs(button));
+      if (ButtonDown != null)
+        ButtonDown.Invoke(null, new MouseEventArgs(button));
     }
 
     private void OnButtonUp(int button)
     {
-      if (this.ButtonUp != null)
-        this.ButtonUp.Invoke(null, new MouseEventArgs(button));
+      if (ButtonUp != null)
+        ButtonUp.Invoke(null, new MouseEventArgs(button));
     }
 
     private IntPtr SetHook(LowLevelMouseProc proc)
@@ -113,27 +113,27 @@ namespace SimplePTT
         {
           if (wParam == (IntPtr)WM_LBUTTONDOWN)
           {
-            this.OnButtonDown(1);
+            OnButtonDown(1);
           }
           else if (wParam == (IntPtr)WM_LBUTTONUP)
           {
-            this.OnButtonUp(1);
+            OnButtonUp(1);
           }
           else if (wParam == (IntPtr)WM_RBUTTONDOWN)
           {
-            this.OnButtonDown(2);
+            OnButtonDown(2);
           }
           else if (wParam == (IntPtr)WM_RBUTTONUP)
           {
-            this.OnButtonUp(2);
+            OnButtonUp(2);
           }
           else if (wParam == (IntPtr)WM_MBUTTONDOWN)
           {
-            this.OnButtonDown(3);
+            OnButtonDown(3);
           }
           else if (wParam == (IntPtr)WM_MBUTTONUP)
           {
-            this.OnButtonUp(3);
+            OnButtonUp(3);
           }
           else if (wParam == (IntPtr)WM_XBUTTONDOWN)
           {
@@ -145,11 +145,11 @@ namespace SimplePTT
             switch (HiWord(mouseHookStruct.MouseData))
             { 
               case XBUTTON1:
-                this.OnButtonDown(4);
+                OnButtonDown(4);
                 break;
 
               case XBUTTON2:
-                this.OnButtonDown(5);
+                OnButtonDown(5);
                 break;
             }
           }
@@ -163,17 +163,17 @@ namespace SimplePTT
             switch (HiWord(mouseHookStruct.MouseData))
             {
               case XBUTTON1:
-                this.OnButtonUp(4);
+                OnButtonUp(4);
                 break;
 
               case XBUTTON2:
-                this.OnButtonUp(5);
+                OnButtonUp(5);
                 break;
             }
           }
         }
 
-        return CallNextHookEx(this.hookId, nCode, wParam, lParam);
+        return CallNextHookEx(hookId, nCode, wParam, lParam);
     }
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]

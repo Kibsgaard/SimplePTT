@@ -9,177 +9,144 @@ using AudioSwitcher.AudioApi.CoreAudio;
 
 namespace SimplePTT
 {
-  public class MicController : IDisposable
-  {
-    public const int MUTE_DELAY = 300;
-
-    public bool IsMuted { get; private set; }
-
-    private CoreAudioController controller;
-    private KeyboardHook keyboardHook;
-    private MouseHook mouseHook;
-
-    private Timer timer;
-    private Object muteLock;
-
-    public MicController()
+    public class MicController : IDisposable
     {
-      this.controller = new CoreAudioController();
+        public const int MUTE_DELAY = 300;
 
-      this.muteLock = new Object();
-      this.timer = new Timer(MUTE_DELAY);
-      this.timer.AutoReset = false;
-      this.timer.Elapsed += this.Timer_Elapsed;
+        public bool IsMuted { get; private set; }
 
-      this.keyboardHook = new KeyboardHook();
-      this.keyboardHook.KeyDown += KeyboardHook_KeyDown;
-      this.keyboardHook.KeyUp += KeyboardHook_KeyUp;
+        private TrayIcon trayIcon;
+        private CoreAudioController controller;
+        private KeyboardHook keyboardHook;
+        private MouseHook mouseHook;
 
-      this.mouseHook = new MouseHook();
-      this.mouseHook.ButtonDown += MouseHook_ButtonDown;
-      this.mouseHook.ButtonUp += MouseHook_ButtonUp;
+        private Timer timer;
+        private Object muteLock;
 
-      this.Mute(true);
+        public MicController(TrayIcon tray)
+        {
+            controller = new CoreAudioController();
+
+            muteLock = new Object();
+            timer = new Timer(MUTE_DELAY);
+            timer.AutoReset = false;
+            timer.Elapsed += Timer_Elapsed;
+
+            keyboardHook = new KeyboardHook();
+            keyboardHook.KeyDown += KeyboardHook_KeyDown;
+            keyboardHook.KeyUp += KeyboardHook_KeyUp;
+
+            mouseHook = new MouseHook();
+            mouseHook.ButtonDown += MouseHook_ButtonDown;
+            mouseHook.ButtonUp += MouseHook_ButtonUp;
+
+            trayIcon = tray;
+            Mute(true);
+        }
+
+        void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            Mute(true);
+        }
+
+        public void Dispose()
+        {
+            Mute(false);
+            keyboardHook.Dispose();
+            mouseHook.Dispose();
+        }
+
+        private bool IsValidButton(int button)
+        {
+            switch (button)
+            {
+                case 4:
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsPushToTalkKey(KeyEventArgs keyEvt)
+        {
+            switch (keyEvt.Key)
+            {
+                case Key.F13:
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsToggleMuteKey(KeyEventArgs keyEvt)
+        {
+            switch (keyEvt.Key)
+            {
+                case Key.Pause:
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void KeyboardHook_KeyDown(object sender, KeyEventArgs keyEvt)
+        {
+            if (IsPushToTalkKey(keyEvt))
+                Unmute();
+            else if (IsToggleMuteKey(keyEvt))
+                ToggleMute();
+        }
+
+        private void ToggleMute()
+        {
+            Mute(!IsMuted);
+        }
+
+        private void KeyboardHook_KeyUp(object sender, KeyEventArgs keyEvt)
+        {
+            if (IsPushToTalkKey(keyEvt))
+                DeferMute();
+        }
+
+        void MouseHook_ButtonDown(object sender, MouseEventArgs mouseEvt)
+        {
+            if (IsValidButton(mouseEvt.Button))
+                Unmute();
+        }
+
+        void MouseHook_ButtonUp(object sender, MouseEventArgs mouseEvt)
+        {
+            if (IsValidButton(mouseEvt.Button))
+                DeferMute();
+        }
+
+        private void DeferMute()
+        {
+            timer.Stop();
+            timer.Start();
+        }
+
+        private void Unmute()
+        {
+            timer.Stop();
+            Mute(false);
+        }
+
+        private void Mute(bool mute)
+        {
+            lock (muteLock)
+            {
+                GetActiveDevice().Mute(mute);
+                IsMuted = mute;
+                trayIcon.SetMutedIcon(mute);
+            }
+        }
+
+        private CoreAudioDevice GetActiveDevice()
+        {
+            return
+              controller.GetCaptureDevices(DeviceState.Active)
+                .FirstOrDefault(o => o.IsDefaultDevice);
+        }
     }
-
-    void Timer_Elapsed(object sender, ElapsedEventArgs e)
-    {
-      this.Mute(true);
-    }
-
-    public void Dispose()
-    {
-      this.Mute(false);
-      this.keyboardHook.Dispose();
-      this.mouseHook.Dispose();
-    }
-
-    private bool IsValidButton(int button)
-    {
-      switch (button)
-      {
-        case 4:
-          return true;
-      }
-
-      return false;
-    }
-
-    private bool IsValidKey(KeyEventArgs keyEvt)
-    {
-      switch (keyEvt.Key)
-      {
-        case Key.CapsLock:
-          return true;
-
-        case Key.Z:
-          return true;
-
-        case Key.Add:
-          return true;
-
-        case Key.Subtract:
-          return true;
-
-        case Key.Multiply:
-          return true;
-
-        case Key.Divide:
-          return true;
-
-        case Key.Decimal:
-          return true;
-
-        case Key.Enter:
-          return true;
-
-        case Key.NumPad0:
-          return true;
-
-        case Key.NumPad1:
-          return true;
-
-        case Key.NumPad2:
-          return true;
-
-        case Key.NumPad3:
-          return true;
-
-        case Key.NumPad4:
-          return true;
-
-        case Key.NumPad5:
-          return true;
-
-        case Key.NumPad6:
-          return true;
-
-        case Key.NumPad7:
-          return true;
-
-        case Key.NumPad8:
-          return true;
-
-        case Key.NumPad9:
-          return true;
-
-        case Key.Scroll:
-          return true;
-      }
-
-      return false;
-    }
-
-    private void KeyboardHook_KeyDown(object sender, KeyEventArgs keyEvt)
-    {
-      if (IsValidKey(keyEvt))
-        this.Unmute();
-    }
-
-    private void KeyboardHook_KeyUp(object sender, KeyEventArgs keyEvt)
-    {
-      if (IsValidKey(keyEvt))
-          this.DeferMute();
-    }
-
-    void MouseHook_ButtonDown(object sender, MouseEventArgs mouseEvt)
-    {
-      if (IsValidButton(mouseEvt.Button))
-          this.Unmute();
-    }
-
-    void MouseHook_ButtonUp(object sender, MouseEventArgs mouseEvt)
-    {
-      if (IsValidButton(mouseEvt.Button))
-        this.DeferMute();
-    }
-
-    private void DeferMute()
-    {
-      this.timer.Stop();
-      this.timer.Start();
-    }
-
-    private void Unmute()
-    {
-      this.timer.Stop();
-      this.Mute(false);
-    }
-
-    private void Mute(bool mute)
-    {
-      lock (this.muteLock)
-      {
-        this.GetActiveDevice().Mute(mute);
-        this.IsMuted = mute;
-      }
-    }
-
-    private CoreAudioDevice GetActiveDevice()
-    {
-      return
-        this.controller.GetCaptureDevices(DeviceState.Active)
-          .FirstOrDefault(o => o.IsDefaultDevice);
-    }
-  }
 }
