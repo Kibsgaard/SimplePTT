@@ -18,7 +18,7 @@ namespace SimplePTT
             mutedIcon = Resources.GreyMicrophone;
             openMicIcon = Resources.GreenMicrophone;
 
-            icon.Text = "SimplePTT 1.0";
+            icon.Text = Resources.ProgramTitle;
             icon.Visible = true;
             icon.ContextMenuStrip = new ContextMenu().Create();
 

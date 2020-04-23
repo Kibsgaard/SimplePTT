@@ -79,5 +79,14 @@ namespace SimplePTT {
                 return ((System.Drawing.Icon)(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SimplePTT 1.2.
+        /// </summary>
+        internal static string ProgramTitle {
+            get {
+                return ResourceManager.GetString("ProgramTitle", resourceCulture);
+            }
+        }
     }
 }
