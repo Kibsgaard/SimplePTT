@@ -125,7 +125,7 @@
     <value>Images\GreyMicrophone.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="ProgramTitle" xml:space="preserve">
-    <value>SimplePTT 1.2.1</value>
+    <value>SimplePTT 1.2.2</value>
     <comment>Title including version</comment>
   </data>
 </root>

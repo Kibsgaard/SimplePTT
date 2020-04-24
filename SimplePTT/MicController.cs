@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Timers;
 using System.Windows.Input;
 using AudioSwitcher.AudioApi;
 using AudioSwitcher.AudioApi.CoreAudio;
+using AudioSwitcher.AudioApi.Observables;
 
 namespace SimplePTT
 {
@@ -21,7 +21,9 @@ namespace SimplePTT
 
     private readonly Timer timer;
     private readonly Object muteLock;
+    private TargetMicrophoneState targetMicrophoneState;
     private Guid? selectedDeviceGuid;
+    private IDisposable muteChangedSubscription;
 
     public MicController()
     {
@@ -40,7 +42,44 @@ namespace SimplePTT
       mouseHook.ButtonDown += MouseHook_ButtonDown;
       mouseHook.ButtonUp += MouseHook_ButtonUp;
 
+      SetAudioDevice(TargetMicrophoneState.Default, controller.DefaultCaptureDevice.Id);
+
+      controller.AudioDeviceChanged.Subscribe(OnAudioDeviceChanged);
+
       Mute(true);
+    }
+
+    private void OnAudioDeviceChanged(DeviceChangedArgs value)
+    {
+      switch (value.ChangedType)
+      {
+        case DeviceChangedType.DefaultChanged:
+        case DeviceChangedType.DeviceAdded:
+        case DeviceChangedType.DeviceRemoved:
+        case DeviceChangedType.StateChanged:
+          SetAudioDevice(targetMicrophoneState, GetGuid());
+            break;
+        case DeviceChangedType.PropertyChanged:
+        case DeviceChangedType.MuteChanged:
+        case DeviceChangedType.VolumeChanged:
+        case DeviceChangedType.PeakValueChanged:
+          break;
+      }
+    }
+
+    private Guid GetGuid()
+    {
+      switch (targetMicrophoneState)
+      {
+        case TargetMicrophoneState.Default:
+          return GetDefaultAudioDevice().Id;
+        case TargetMicrophoneState.DefaultCommunications:
+          return GetDefaultCommunicationAudioDevice().Id;
+        case TargetMicrophoneState.Specific:
+          return selectedDeviceGuid.Value;
+        default:
+          throw new ArgumentOutOfRangeException();
+      }
     }
 
     private void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -65,12 +104,41 @@ namespace SimplePTT
       return controller.GetCaptureDevices(DeviceState.Active);
     }
 
-    public void SetAudioDevice(Guid guid)
+    public CoreAudioDevice GetDefaultAudioDevice()
     {
-      selectedDeviceGuid = guid;
+      return controller.DefaultCaptureDevice;
     }
 
-    private bool IsValidButton(int button)
+    public CoreAudioDevice GetDefaultCommunicationAudioDevice()
+    {
+      return controller.DefaultCaptureCommunicationsDevice;
+    }
+
+    public TargetMicrophoneState GetTargetMicrophoneState()
+    {
+      return targetMicrophoneState;
+    }
+
+    public enum TargetMicrophoneState
+    {
+      Default,
+      DefaultCommunications,
+      Specific
+    }
+
+    public void SetAudioDevice(TargetMicrophoneState target, Guid guid)
+    {
+      targetMicrophoneState = target;
+      selectedDeviceGuid = guid;
+
+      if (muteChangedSubscription != null)
+        muteChangedSubscription.Dispose();
+
+      muteChangedSubscription = GetActiveDevice().MuteChanged.Subscribe(OnMuteChanged);
+      Mute(IsMuted);
+    }
+
+    private bool IsValidMouseButton(int button)
     {
       switch (button)
       {
@@ -127,13 +195,13 @@ namespace SimplePTT
 
     private void MouseHook_ButtonDown(object sender, MouseEventArgs mouseEvt)
     {
-      if (IsValidButton(mouseEvt.Button))
+      if (IsValidMouseButton(mouseEvt.Button))
         Unmute();
     }
 
     private void MouseHook_ButtonUp(object sender, MouseEventArgs mouseEvt)
     {
-      if (IsValidButton(mouseEvt.Button))
+      if (IsValidMouseButton(mouseEvt.Button))
         DeferMute();
     }
 
@@ -155,16 +223,31 @@ namespace SimplePTT
       {
         GetActiveDevice().Mute(mute);
         IsMuted = mute;
-        MuteToggled?.Invoke(mute);
       }
     }
 
     private CoreAudioDevice GetActiveDevice()
     {
-      if (!selectedDeviceGuid.HasValue)
-        selectedDeviceGuid = controller.GetCaptureDevices(DeviceState.Active).FirstOrDefault(o => o.IsDefaultDevice).Id;
+      switch (targetMicrophoneState)
+      {
+        case TargetMicrophoneState.Default:
+          return controller.DefaultCaptureDevice;
+        case TargetMicrophoneState.DefaultCommunications:
+          return controller.DefaultCaptureCommunicationsDevice;
+        case TargetMicrophoneState.Specific:
+          return controller.GetDevice(selectedDeviceGuid.Value);
+      }
 
-      return controller.GetDevice(selectedDeviceGuid.Value);
+      return null;
+    }
+
+    private void OnMuteChanged(DeviceMuteChangedArgs value)
+    {
+      if(value.Device.Id == selectedDeviceGuid)
+      {
+        IsMuted = value.Device.IsMuted;
+        MuteToggled?.Invoke(IsMuted);
+      }
     }
   }
 }

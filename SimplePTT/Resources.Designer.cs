@@ -81,7 +81,7 @@ namespace SimplePTT {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to SimplePTT 1.2.1.
+        ///   Looks up a localized string similar to SimplePTT 1.2.2.
         /// </summary>
         internal static string ProgramTitle {
             get {
