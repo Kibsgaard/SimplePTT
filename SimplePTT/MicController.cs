@@ -193,16 +193,26 @@ namespace SimplePTT
         DeferMute();
     }
 
+    private DateTime mouseDownTime = new DateTime();
     private void MouseHook_ButtonDown(object sender, MouseEventArgs mouseEvt)
     {
       if (IsValidMouseButton(mouseEvt.Button))
+      {
+        mouseDownTime = DateTime.Now;
+
         Unmute();
+      }
     }
 
     private void MouseHook_ButtonUp(object sender, MouseEventArgs mouseEvt)
     {
       if (IsValidMouseButton(mouseEvt.Button))
+      {
+        if(DateTime.Now - mouseDownTime > TimeSpan.FromMilliseconds(200))
+          mouseHook.ConsumeMouseKey = true;
+
         DeferMute();
+      }
     }
 
     private void DeferMute()

@@ -103,8 +103,11 @@ namespace SimplePTT
       }
     }
 
+    public bool ConsumeMouseKey;
+
     private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
+      ConsumeMouseKey = false;
       if (nCode >= 0)
       {
         if (wParam == (IntPtr)WM_LBUTTONDOWN)
@@ -141,6 +144,7 @@ namespace SimplePTT
           switch (HiWord(mouseHookStruct.MouseData))
           {
             case XBUTTON1:
+              
               OnButtonDown(4);
               break;
 
@@ -148,9 +152,12 @@ namespace SimplePTT
               OnButtonDown(5);
               break;
           }
+
+          ConsumeMouseKey = true;
         }
         else if (wParam == (IntPtr)WM_XBUTTONUP)
         {
+
           MouseLLHookStruct mouseHookStruct =
             (MouseLLHookStruct)Marshal.PtrToStructure(
             lParam,
@@ -159,6 +166,7 @@ namespace SimplePTT
           switch (HiWord(mouseHookStruct.MouseData))
           {
             case XBUTTON1:
+              
               OnButtonUp(4);
               break;
 
@@ -166,6 +174,12 @@ namespace SimplePTT
               OnButtonUp(5);
               break;
           }
+        }
+
+        if (ConsumeMouseKey)
+        {
+          ConsumeMouseKey = false;
+          return (IntPtr)1;
         }
       }
 
