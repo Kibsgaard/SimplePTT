@@ -6,12 +6,11 @@ namespace SimplePTT
 {
   public class MouseEventArgs : EventArgs
   {
-    public int Button { get { return button; } }
-    private readonly int button;
+    public int Button { get; }
 
     public MouseEventArgs(int button)
     {
-      this.button = button;
+      Button = button;
     }
   }
 
@@ -54,13 +53,11 @@ namespace SimplePTT
     private const int XBUTTON1 = 1;
     private const int XBUTTON2 = 2;
 
-    private delegate IntPtr LowLevelMouseProc(
-      int nCode,
-      IntPtr wParam,
-      IntPtr lParam);
+    private delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
 
     public event EventHandler<MouseEventArgs> ButtonDown;
     public event EventHandler<MouseEventArgs> ButtonUp;
+    public bool ConsumeMouseKey;
 
     private readonly LowLevelMouseProc mouseProc;
     private readonly IntPtr hookId;
@@ -73,7 +70,7 @@ namespace SimplePTT
 
     public void Dispose()
     {
-      MouseHook.UnhookWindowsHookEx(hookId);
+      UnhookWindowsHookEx(hookId);
     }
 
     private void OnButtonDown(int button)
@@ -91,118 +88,77 @@ namespace SimplePTT
     private IntPtr SetHook(LowLevelMouseProc proc)
     {
       using (Process curProcess = Process.GetCurrentProcess())
-      {
-        using (ProcessModule curModule = curProcess.MainModule)
-        {
-          return SetWindowsHookEx(
-            WH_MOUSE_LL,
-            proc,
-            GetModuleHandle(curModule.ModuleName),
-            0);
-        }
-      }
+      using (ProcessModule curModule = curProcess.MainModule)
+        return SetWindowsHookEx(WH_MOUSE_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
     }
-
-    public bool ConsumeMouseKey;
 
     private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
+      if (nCode < 0)
+        return CallNextHookEx(hookId, nCode, wParam, lParam);
+
       ConsumeMouseKey = false;
-      if (nCode >= 0)
+      var wParamLong = (long)wParam;
+
+      switch (wParamLong)
       {
-        if (wParam == (IntPtr)WM_LBUTTONDOWN)
-        {
+        case WM_LBUTTONDOWN:
           OnButtonDown(1);
-        }
-        else if (wParam == (IntPtr)WM_LBUTTONUP)
-        {
+          break;
+        case WM_LBUTTONUP:
           OnButtonUp(1);
-        }
-        else if (wParam == (IntPtr)WM_RBUTTONDOWN)
-        {
+          break;
+        case WM_RBUTTONDOWN:
           OnButtonDown(2);
-        }
-        else if (wParam == (IntPtr)WM_RBUTTONUP)
-        {
+          break;
+        case WM_RBUTTONUP:
           OnButtonUp(2);
-        }
-        else if (wParam == (IntPtr)WM_MBUTTONDOWN)
-        {
+          break;
+        case WM_MBUTTONDOWN:
           OnButtonDown(3);
-        }
-        else if (wParam == (IntPtr)WM_MBUTTONUP)
-        {
+          break;
+        case WM_MBUTTONUP:
           OnButtonUp(3);
-        }
-        else if (wParam == (IntPtr)WM_XBUTTONDOWN)
-        {
-          MouseLLHookStruct mouseHookStruct =
-            (MouseLLHookStruct)Marshal.PtrToStructure(
-            lParam,
-            typeof(MouseLLHookStruct));
-
-          switch (HiWord(mouseHookStruct.MouseData))
-          {
-            case XBUTTON1:
-              
-              OnButtonDown(4);
-              break;
-
-            case XBUTTON2:
-              OnButtonDown(5);
-              break;
-          }
-
+          break;
+        case WM_XBUTTONDOWN:
+          TriggerSideButtonEvent(lParam, OnButtonDown);
           ConsumeMouseKey = true;
-        }
-        else if (wParam == (IntPtr)WM_XBUTTONUP)
-        {
-
-          MouseLLHookStruct mouseHookStruct =
-            (MouseLLHookStruct)Marshal.PtrToStructure(
-            lParam,
-            typeof(MouseLLHookStruct));
-
-          switch (HiWord(mouseHookStruct.MouseData))
-          {
-            case XBUTTON1:
-              
-              OnButtonUp(4);
-              break;
-
-            case XBUTTON2:
-              OnButtonUp(5);
-              break;
-          }
-        }
-
-        if (ConsumeMouseKey)
-        {
-          ConsumeMouseKey = false;
-          return (IntPtr)1;
-        }
+          break;
+        case WM_XBUTTONUP:
+          TriggerSideButtonEvent(lParam, OnButtonUp);
+          break;
       }
+
+      if (ConsumeMouseKey)
+        return (IntPtr)1;
 
       return CallNextHookEx(hookId, nCode, wParam, lParam);
     }
 
+    private void TriggerSideButtonEvent(IntPtr lParam, Action<int> target)
+    {
+      var mouseHookStruct = (MouseLLHookStruct)Marshal.PtrToStructure(lParam, typeof(MouseLLHookStruct));
+
+      switch (HiWord(mouseHookStruct.MouseData))
+      {
+        case XBUTTON1:
+          target(4);
+          break;
+        case XBUTTON2:
+          target(5);
+          break;
+      }
+    }
+
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern IntPtr SetWindowsHookEx(
-      int idHook,
-      LowLevelMouseProc lpfn,
-      IntPtr hMod,
-      uint dwThreadId);
+    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint dwThreadId);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool UnhookWindowsHookEx(IntPtr hhk);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern IntPtr CallNextHookEx(
-      IntPtr hhk,
-      int nCode,
-      IntPtr wParam,
-      IntPtr lParam);
+    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr GetModuleHandle(string lpModuleName);
