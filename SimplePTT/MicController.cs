@@ -21,6 +21,8 @@ namespace SimplePTT
 
     private readonly Timer timer;
     private readonly Object muteLock;
+    private DateTime mouseDownTime = new DateTime();
+    private bool wasMutedOnMouseDown;
     private TargetMicrophoneState targetMicrophoneState;
     private Guid? selectedDeviceGuid;
     private IDisposable muteChangedSubscription;
@@ -193,13 +195,12 @@ namespace SimplePTT
         DeferMute();
     }
 
-    private DateTime mouseDownTime = new DateTime();
     private void MouseHook_ButtonDown(object sender, MouseEventArgs mouseEvt)
     {
       if (IsValidMouseButton(mouseEvt.Button))
       {
         mouseDownTime = DateTime.Now;
-
+        wasMutedOnMouseDown = IsMuted;
         Unmute();
       }
     }
@@ -211,7 +212,8 @@ namespace SimplePTT
         if(DateTime.Now - mouseDownTime > TimeSpan.FromMilliseconds(200))
           mouseHook.ConsumeMouseKey = true;
 
-        DeferMute();
+        if(wasMutedOnMouseDown)
+          DeferMute();
       }
     }
 
