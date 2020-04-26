@@ -11,7 +11,9 @@ You can change the keybindings in MicController.cs
 
 Extended by me to support:
 - Open mic and push-to-talk simultanously
-- Tray icon switches from grey (muted) to green (unmuted).
+- Tray icon switches from grey (muted) to green (unmuted)
+- Microphone selection
+- Only propergates quick mouse button activations to other applications (<200 ms)
 
 Credits:
 - Originally by brunolm
